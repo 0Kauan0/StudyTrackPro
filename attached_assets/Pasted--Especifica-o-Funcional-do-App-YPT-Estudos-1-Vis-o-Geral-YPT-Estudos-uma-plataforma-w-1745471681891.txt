@@ -1,0 +1,126 @@
+## Especificação Funcional do App YPT Estudos
+
+### 1. Visão Geral
+**YPT Estudos** é uma plataforma web de ensino personalizada, focada em promover o hábito de estudo diário por meio de recursos gamificados, rastreamento de progresso e recompensas visuais. O site servirá como front‑end e back‑end para alunos e administradores, fornecendo:
+- Acesso a cursos e módulos de estudo
+- Rastreamento de progresso de cada aluno
+- Sistema de recompensas visuais (imagens) que evoluem conforme o aluno estuda, e reiniciam em caso de quebra de sequência (streak)
+- Painel administrativo para gestão de conteúdo, usuários e estatísticas
+
+### 2. Personas Principais
+| Persona       | Objetivo Principal                        | Necessidades                            |
+|---------------|-------------------------------------------|-----------------------------------------|
+| Aluno         | Estudar diariamente e visualizar progresso| Interface intuitiva, gamificação, feedback visual|
+| Professor     | Criar e gerenciar cursos e quizzes        | Editor de conteúdo, estatísticas de desempenho|
+| Administrador | Monitorar plataforma e usuários           | Dashboard de métricas, controle de acesso|
+
+### 3. Funcionalidades do Aluno
+1. **Cadastro e Login**  
+   - Registro por e-mail/senha ou OAuth (Google, Facebook).  
+   - Recuperação de senha por e-mail.
+2. **Dashboard de Estudos**  
+   - Visão geral de cursos em andamento e status de cada módulo.  
+   - Exibição de streak (dias consecutivos estudando).
+3. **Catálogo de Cursos**  
+   - Listagem de cursos disponíveis, filtros por categoria e nível.  
+   - Página de detalhes do curso com currículo, autor e avaliações.
+4. **Aulas e Módulos**  
+   - Conteúdo multimídia (texto, vídeo, áudio).  
+   - Quizzes interativos ao final de cada módulo.
+5. **Rastreamento de Progresso**  
+   - Marcação automática de conclusão de módulo.  
+   - Histórico de estudo por data e tempo gasto.
+6. **Sistema de Notificações**  
+   - Lembretes de estudo diários por e-mail e/ou push.
+7. **Perfil do Usuário**  
+   - Estatísticas pessoais (horas estudadas, streak, badges).  
+   - Configurações de conta e preferências de notificação.
+
+### 4. Funcionalidades do Professor
+1. **Criação de Curso**  
+   - Formulário para título, descrição, imagem de capa.  
+   - Upload de materiais (PDF, vídeo, texto).  
+   - Organização de módulos e lições.
+2. **Editor de Quiz**  
+   - Tipos de perguntas: múltipla escolha, verdadeiro/falso, dissertativa.
+3. **Análise de Desempenho**  
+   - Relatórios de acertos por questão.  
+   - Acompanhamento de progresso de turmas.
+
+### 5. Funcionalidades do Administrador
+1. **Gestão de Usuários**  
+   - Listagem, edição e exclusão de contas.  
+   - Atribuição de papéis (aluno, professor).
+2. **Dashboard de Métricas**  
+   - Total de usuários, cursos ativos, média de estudos diários.
+3. **Moderação de Conteúdo**  
+   - Aprovação ou reprovação de cursos submetidos.
+
+---
+
+## 6. Sistema Gamificado de Imagens (Rewards)
+### 6.1 Conceito
+- À medida que o aluno completa módulos e mantém streak diário, exibe-se uma coleção de imagens ("jardim virtual", "coleção de cartões", etc.).
+- Cada dia estudado libera uma nova imagem ou evolui uma imagem existente.
+- Se o aluno faltar um dia, o conjunto de imagens reinicia (streak zera), incentivando a retomada diária.
+
+### 6.2 Fluxo de Recompensas
+1. **Dia 1 de estudo**: Desbloqueia Imagem Básica (Nível 1).  
+2. **Dia 2 consecutivo**: Evolução da Imagem para Nível 2.  
+3. **...**  
+4. **Dia N**: Evolução até Nível Máximo ou desbloqueio de imagem rara.
+5. **Falta**: Reset do conjunto. Exibe alerta e sugestão para reiniciar o streak.
+
+### 6.3 Tipos de Imagens
+- **Comum**: liberadas nos primeiros 3 dias.  
+- **Raras**: desbloqueadas a partir de 7 dias de streak.  
+- **Épicas**: recompensas especiais em marcos de 30 dias.
+
+### 6.4 Banco de Dados para Gamificação
+| Tabela         | Campos principais                           | Descrição                              |
+|----------------|----------------------------------------------|----------------------------------------|
+| user_streak    | user_id, current_streak, last_study_date    | Rastreamento dos dias consecutivos     |
+| reward_images  | image_id, tier (comum/raro/épico), path     | Catalogo de imagens disponíveis         |
+| user_rewards   | user_id, image_id, obtained_date            | Relaciona usuário às imagens conquistadas|
+
+---
+
+## 7. Regras de Negócio
+- Um módulo só pode ser concluído se o quiz final tiver nota >= 70%.  
+- O streak é contabilizado apenas se o usuário estudar pelo menos 10 minutos por dia.  
+- Notificações de reengajamento enviadas após 24h de inatividade.
+
+## 8. Wireframes e Fluxos de Navegação
+1. **Tela Inicial / Login**  
+2. **Dashboard** → atalhos para cursos, perfil, recompensas.  
+3. **Curso** → lista de módulos → aula → quiz.  
+4. **Galeria de Imagens** → visualização do jardim/coleção e status de evolução.
+
+## 9. Tecnologias Sugeridas
+- **Front‑end**: React.js, Next.js, Tailwind CSS.  
+- **Back‑end**: Node.js (Express) ou Django (Python).  
+- **Banco de Dados**: PostgreSQL (relacional), Redis (cache de streaks).  
+- **Autenticação**: JWT + OAuth 2.0.  
+- **Deploy**: Vercel / AWS (EC2, RDS, S3).
+
+## 10. API Endpoints Principais (exemplos)
+| Método | Rota                    | Descrição                                 |
+|--------|-------------------------|-------------------------------------------|
+| POST   | /api/auth/register      | Registrar novo usuário                    |
+| POST   | /api/auth/login         | Autenticar e gerar token                  |
+| GET    | /api/courses            | Listar cursos                             |
+| GET    | /api/courses/:id        | Detalhes de um curso                      |
+| POST   | /api/users/:id/study    | Registrar sessão de estudo diário         |
+| GET    | /api/users/:id/rewards  | Listar imagens desbloqueadas              |
+
+---
+
+## 11. Considerações de UX/UI
+- Layout responsivo (mobile-first).  
+- Feedback instantâneo em quizzes (correto/incorreto).  
+- Animações suaves ao desbloquear imagens (Framer Motion).
+
+---
+
+Este documento serve como guia completo para a construção do site YPT Estudos com foco em gamificação por imagens e reforço de hábitos de estudo.
+

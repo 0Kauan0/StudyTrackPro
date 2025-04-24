@@ -1,0 +1,84 @@
+Olá! Quero criar um site de acompanhamento de estudos (um "study tracker") com um visual moderno, animações suaves e que funcione sempre em tema escuro. O foco principal é me ajudar a visualizar e organizar meu tempo de estudo de forma prática e motivadora. Vou descrever tudo o que ele precisa ter, e também algumas ideias complementares que podem enriquecer o projeto.
+🔧 Funcionalidades obrigatórias:
+1. Cronômetro de estudo
+
+    Preciso de um cronômetro simples, mas funcional.
+
+    Quero poder iniciar, pausar e zerar o tempo.
+
+    Quando eu iniciar uma sessão, quero escolher a matéria que estou estudando (pode ser por meio de um seletor ou um campo).
+
+    Depois que parar o cronômetro, essa sessão deve ser registrada automaticamente: com tempo total, matéria e horário (início e fim).
+
+    Isso precisa ficar salvo, para depois gerar as estatísticas.
+
+2. Painel com métricas
+
+    Quero gráficos que me mostrem:
+
+        Qual matéria eu estudei mais (pode ser um gráfico de pizza).
+
+        Quantas horas estudei por dia (linha ou barras).
+
+        Um resumo por semana ou mês.
+
+    Também seria legal o sistema me dar insights, tipo:
+
+        "Você estudou mais Matemática essa semana."
+
+        "Hoje você estudou 2h a menos que ontem."
+
+3. Calendário
+
+    Um calendário visual onde eu possa ver o que estudei em cada dia.
+
+    Exemplo: clico no dia 15 e aparece que estudei 40 min de Biologia e 1h de Física.
+
+    Não precisa ser um planner (tipo Google Agenda), mas sim algo focado no histórico de sessões.
+
+    Se der, seria massa ter mini gráficos nos dias (tipo círculos coloridos ou barras bem pequenas).
+
+4. Interface
+
+    Tema escuro obrigatório.
+
+    Design moderno, limpo, com animações suaves (nada exagerado, só para dar vida).
+
+    Layout responsivo (tem que funcionar bem no celular também).
+
+    Tudo em português.
+
+    Botões, cards e componentes com um “toque” animado (hover, click, transitions).
+
+🎨 Ideias extras que podem enriquecer:
+🏆 Gamificação (opcional, mas interessante)
+
+    Conquistas ao completar metas (ex: 10h de estudo em uma semana).
+
+    Níveis ou XP acumulado com base nas horas estudadas.
+
+🧑‍💻 Personalização
+
+    Escolher temas visuais (diferentes paletas, mas todas escuras).
+
+    Cadastrar novas matérias, renomear, apagar.
+
+📱 Acessibilidade e fluidez
+
+    Ícones bem pensados.
+
+    Navegação fácil e rápida.
+
+    Pode usar bibliotecas como Framer Motion (para animações) e Tailwind (para o layout), se forem adequadas.
+
+⚙️ Sobre a parte técnica (caso precise)
+
+    Backend pode ser simples (Node, Firebase ou até localStorage no começo, se for MVP).
+
+    Para os gráficos, pode usar Recharts ou Chart.js.
+
+    Frontend pode ser em React (recomendo), mas deixo aberto se tiver outra sugestão mais eficaz.
+
+Resumo: o site tem que ser um painel pessoal de estudos — funcional, bonito e intuitivo. O mais importante é ter o cronômetro, o rastreio das matérias e o painel de estatísticas com o calendário. As outras ideias são complementos pra deixar a experiência mais divertida e motivadora.
+
+Se precisar que eu organize as matérias que quero rastrear desde já, ou definir metas diárias, posso ajudar com isso também!

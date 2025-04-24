@@ -2,6 +2,9 @@ import React from "react";
 import { Link } from "wouter";
 import { Clock, BarChart2, CalendarDays, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/use-profile";
+// Import diretamente do arquivo shared/schema.ts
+import type { Streak } from "../../../../../../shared/schema";
 
 type SidebarProps = {
   activePath: string;
@@ -9,12 +12,25 @@ type SidebarProps = {
 
 const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
   // Get streak data
-  const { data: streak } = useQuery({
+  const { data: streak } = useQuery<Streak>({
     queryKey: ['/api/streak'],
     staleTime: 60 * 1000, // 1 minute
   });
+  
+  // Get user profile data
+  const { profile } = useProfile();
 
   const currentStreak = streak?.currentStreak || 0;
+  
+  // Generate initials from the user's name
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map(part => part.charAt(0))
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  };
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-slate-800 border-r border-slate-700 p-4">
@@ -58,12 +74,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
         <div className="px-3 py-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-primary-400 font-medium">
-              JP
+              {profile ? getInitials(profile.name) : '--'}
             </div>
             <div>
-              <p className="text-sm font-medium text-white">João Pedro</p>
+              <p className="text-sm font-medium text-white">
+                {profile ? profile.name : 'Carregando...'}
+              </p>
               <p className="text-xs text-slate-400">
-                Nível 3 • {currentStreak > 0 ? `${currentStreak} dias consecutivos` : 'Comece hoje!'}
+                Nível {profile?.level || 1} • {currentStreak > 0 ? `${currentStreak} dias consecutivos` : 'Comece hoje!'}
               </p>
             </div>
           </div>

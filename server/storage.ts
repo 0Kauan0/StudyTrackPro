@@ -165,10 +165,23 @@ export class MemStorage implements IStorage {
       ? new Date(session.endTime) 
       : session.endTime;
       
-    const day = typeof session.day === 'string' 
-      ? new Date(session.day) 
-      : session.day;
-      
+    // Usar a data atual se a data do dia não for fornecida
+    let day;
+    if (session.day) {
+      day = typeof session.day === 'string' 
+        ? new Date(session.day) 
+        : session.day;
+    } else {
+      // Se não houver data fornecida, usar a data atual
+      day = new Date();
+    }
+    
+    // Normalizar a data removendo informações de hora
+    const normalizedDay = new Date(day);
+    normalizedDay.setHours(0, 0, 0, 0);
+    
+    console.log("Criando sessão para o dia:", normalizedDay);
+    
     // Criar nova sessão com os valores convertidos
     const newSession: StudySession = { 
       id, 
@@ -176,7 +189,7 @@ export class MemStorage implements IStorage {
       startTime,
       endTime,
       duration: session.duration,
-      day: day.toISOString()
+      day: normalizedDay.toISOString()
     };
     
     this.studySessions.set(id, newSession);
@@ -196,8 +209,13 @@ export class MemStorage implements IStorage {
     const sessionDay = new Date(session.day);
     sessionDay.setHours(0, 0, 0, 0);
     
+    console.log("Atualizando streak para a sessão:", session);
+    console.log("Dia da sessão:", sessionDay);
+    console.log("Streak atual:", currentStreak);
+    
     if (!currentStreak) {
       // Initialize streak if it doesn't exist
+      console.log("Inicializando streak para 1");
       await this.updateStreak({
         currentStreak: 1,
         lastStudyDate: sessionDay.toISOString()
@@ -206,38 +224,70 @@ export class MemStorage implements IStorage {
     }
     
     const lastStudyDate = currentStreak.lastStudyDate ? new Date(currentStreak.lastStudyDate) : null;
-    if (lastStudyDate) {
-      lastStudyDate.setHours(0, 0, 0, 0);
-      
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      // Se o último estudo foi no mesmo dia que a sessão atual, não aumentamos o streak
-      if (lastStudyDate.getTime() === sessionDay.getTime()) {
-        // Não fazer nada, streak permanece o mesmo
-        return;
-      }
-      // Se o último estudo foi ontem (dia consecutivo)
-      else if (lastStudyDate.getTime() === yesterday.getTime() && 
-               sessionDay.getTime() === today.getTime()) {
-        // Incrementar streak apenas se for um dia novo consecutivo
-        await this.updateStreak({
-          currentStreak: currentStreak.currentStreak + 1,
-          lastStudyDate: sessionDay.toISOString()
-        });
-      } 
-      // Se houve um intervalo maior que 1 dia
-      else if (lastStudyDate.getTime() < yesterday.getTime()) {
-        // Reiniciar o streak
-        await this.updateStreak({
-          currentStreak: 1,
-          lastStudyDate: sessionDay.toISOString()
-        });
-      }
+    console.log("Último dia de estudo:", lastStudyDate);
+    
+    // Se não há último dia de estudo, definir para 1
+    if (!lastStudyDate) {
+      console.log("Sem último dia de estudo, definindo streak para 1");
+      await this.updateStreak({
+        currentStreak: 1,
+        lastStudyDate: sessionDay.toISOString()
+      });
+      return;
     }
+    
+    // Garantir que as datas estejam padronizadas (apenas dia, sem horas)
+    lastStudyDate.setHours(0, 0, 0, 0);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    console.log("Hoje:", today);
+    console.log("Ontem:", yesterday);
+    
+    // Se o último estudo foi no mesmo dia que a sessão atual, não aumentamos o streak
+    if (lastStudyDate.getTime() === sessionDay.getTime()) {
+      console.log("Sessão no mesmo dia, mantendo streak em:", currentStreak.currentStreak);
+      // Não fazer nada, streak permanece o mesmo
+      return;
+    }
+    
+    // Se o último dia de estudo foi ontem E a sessão atual é de hoje
+    if (lastStudyDate.getTime() === yesterday.getTime() && 
+        sessionDay.getTime() === today.getTime()) {
+      console.log("Sessão em dia consecutivo, incrementando streak para:", currentStreak.currentStreak + 1);
+      // Incrementar streak apenas se for um dia novo consecutivo
+      await this.updateStreak({
+        currentStreak: currentStreak.currentStreak + 1,
+        lastStudyDate: sessionDay.toISOString()
+      });
+      return;
+    }
+    
+    // Se a sessão atual é de ontem e a última sessão é de anteontem, incrementa streak
+    const dayBeforeYesterday = new Date(yesterday);
+    dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 1);
+    
+    if (lastStudyDate.getTime() === dayBeforeYesterday.getTime() && 
+        sessionDay.getTime() === yesterday.getTime()) {
+      console.log("Sessão em dia consecutivo (ontem), incrementando streak para:", currentStreak.currentStreak + 1);
+      await this.updateStreak({
+        currentStreak: currentStreak.currentStreak + 1,
+        lastStudyDate: sessionDay.toISOString()
+      });
+      return;
+    }
+    
+    // Se a sessão atual é de um dia diferente de hoje ou ontem, ou se houve um intervalo maior que 1 dia
+    // Reiniciar o streak
+    console.log("Intervalo maior que 1 dia ou data de sessão não consecutiva, reiniciando streak");
+    await this.updateStreak({
+      currentStreak: 1,
+      lastStudyDate: sessionDay.toISOString()
+    });
   }
   
   // User profile methods

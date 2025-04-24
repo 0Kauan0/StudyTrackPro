@@ -31,18 +31,32 @@ function Router() {
 
 function AppContent() {
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { profile, isLoading } = useProfile();
+  const { profile, isLoading, updateProfile } = useProfile();
 
   useEffect(() => {
     // Verificar se o usuário já tem um perfil ou se deve mostrar a tela de onboarding
     if (!isLoading && profile) {
+      console.log("Perfil atual:", profile); // Debug para ver o perfil carregado
+      
+      // Garantir que o perfil tenha o nível e XP corretos quando for novo usuário
+      if (profile.name === "Novo Usuário" && (profile.level !== 1 || profile.xp !== 0)) {
+        console.log("Resetando nível e XP para novo usuário");
+        updateProfile({
+          level: 1,
+          xp: 0,
+          totalStudyHours: 0
+        });
+      }
+      
       const isNewUser = profile.name === "Novo Usuário";
       setShowOnboarding(isNewUser);
     }
-  }, [profile, isLoading]);
+  }, [profile, isLoading, updateProfile]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
+    // Forçar recarregamento dos dados do perfil após completar o onboarding
+    window.location.reload();
   };
 
   return (

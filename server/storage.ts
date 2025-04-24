@@ -62,11 +62,21 @@ export class MemStorage implements IStorage {
     this.streakId = 1;
     this.userProfileId = 1;
     
+    // Limpar quaisquer dados existentes
+    this.studySessions.clear();
+    
     // Add default subjects
     this.initializeSubjects();
     
-    // Create default user profile
+    // Create default user profile sem dados de estudo
     this.initializeUserProfile();
+    
+    // Resetar o streak para zero
+    this.streak = {
+      id: this.streakId++,
+      currentStreak: 0,
+      lastStudyDate: null
+    };
   }
   
   private initializeUserProfile() {
@@ -205,15 +215,23 @@ export class MemStorage implements IStorage {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       
-      if (lastStudyDate.getTime() === yesterday.getTime() || 
-          (lastStudyDate.getTime() === today.getTime() && sessionDay.getTime() === today.getTime())) {
-        // If last study was yesterday or already today, increment streak
+      // Se o último estudo foi no mesmo dia que a sessão atual, não aumentamos o streak
+      if (lastStudyDate.getTime() === sessionDay.getTime()) {
+        // Não fazer nada, streak permanece o mesmo
+        return;
+      }
+      // Se o último estudo foi ontem (dia consecutivo)
+      else if (lastStudyDate.getTime() === yesterday.getTime() && 
+               sessionDay.getTime() === today.getTime()) {
+        // Incrementar streak apenas se for um dia novo consecutivo
         await this.updateStreak({
           currentStreak: currentStreak.currentStreak + 1,
           lastStudyDate: sessionDay.toISOString()
         });
-      } else if (lastStudyDate.getTime() < yesterday.getTime()) {
-        // If there was a gap, reset streak
+      } 
+      // Se houve um intervalo maior que 1 dia
+      else if (lastStudyDate.getTime() < yesterday.getTime()) {
+        // Reiniciar o streak
         await this.updateStreak({
           currentStreak: 1,
           lastStudyDate: sessionDay.toISOString()

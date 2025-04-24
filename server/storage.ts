@@ -145,7 +145,30 @@ export class MemStorage implements IStorage {
   
   async createStudySession(session: InsertStudySession): Promise<StudySession> {
     const id = this.sessionId++;
-    const newSession: StudySession = { id, ...session };
+    
+    // Converter strings para objetos Date antes de armazenar
+    const startTime = typeof session.startTime === 'string' 
+      ? new Date(session.startTime) 
+      : session.startTime;
+      
+    const endTime = typeof session.endTime === 'string' 
+      ? new Date(session.endTime) 
+      : session.endTime;
+      
+    const day = typeof session.day === 'string' 
+      ? new Date(session.day) 
+      : session.day;
+      
+    // Criar nova sessão com os valores convertidos
+    const newSession: StudySession = { 
+      id, 
+      subjectId: session.subjectId,
+      startTime,
+      endTime,
+      duration: session.duration,
+      day: day.toISOString()
+    };
+    
     this.studySessions.set(id, newSession);
     
     // Update streak when creating a new session
@@ -206,7 +229,17 @@ export class MemStorage implements IStorage {
   
   async createUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
     const id = this.userProfileId++;
-    const newProfile: UserProfile = { id, ...profile };
+    
+    // Garantir que todos os campos estejam preenchidos com valores padrão se necessário
+    const newProfile: UserProfile = { 
+      id, 
+      name: profile.name,
+      joinedAt: profile.joinedAt || new Date(),
+      totalStudyHours: profile.totalStudyHours ?? 0,
+      level: profile.level ?? 1,
+      xp: profile.xp ?? 0
+    };
+    
     this.userProfile = newProfile;
     return newProfile;
   }
@@ -247,11 +280,24 @@ export class MemStorage implements IStorage {
   }
   
   async updateStreak(streak: InsertStreak): Promise<Streak> {
+    // Garantir que todas as propriedades obrigatórias estejam presentes
+    const currentStreak = streak.currentStreak ?? 0;
+    const lastStudyDate = streak.lastStudyDate ?? null;
+    
     if (this.streak) {
-      this.streak = { ...this.streak, ...streak };
+      this.streak = { 
+        ...this.streak, 
+        currentStreak,
+        lastStudyDate
+      };
     } else {
-      this.streak = { id: this.streakId++, ...streak };
+      this.streak = { 
+        id: this.streakId++, 
+        currentStreak,
+        lastStudyDate
+      };
     }
+    
     return this.streak;
   }
 }

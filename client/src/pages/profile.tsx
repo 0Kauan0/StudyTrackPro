@@ -23,8 +23,8 @@ const ProfilePage: React.FC = () => {
   const [editedName, setEditedName] = useState("");
 
   // Calculate total study time in hours
-  const totalStudyTime = studySessions 
-    ? studySessions.reduce((total, session) => total + session.duration, 0) / 3600 
+  const totalStudyTime = Array.isArray(studySessions) && studySessions.length > 0
+    ? studySessions.reduce((total: number, session: { duration: number }) => total + session.duration, 0) / 3600 
     : 0;
   
   const formattedStudyTime = totalStudyTime.toFixed(1);
@@ -140,7 +140,11 @@ const ProfilePage: React.FC = () => {
                 <Flame className="w-5 h-5 text-secondary-400" />
                 <div>
                   <p className="text-sm font-medium text-white">Streak Atual</p>
-                  <p className="text-xs text-slate-400">{streak?.currentStreak || 0} dias consecutivos</p>
+                  <p className="text-xs text-slate-400">
+                    {streak && typeof streak === 'object' && 'currentStreak' in streak 
+                      ? streak.currentStreak 
+                      : 0} dias consecutivos
+                  </p>
                 </div>
               </div>
               
@@ -188,7 +192,7 @@ const ProfilePage: React.FC = () => {
                   <div className="w-full bg-slate-700 rounded-full h-1.5 mt-2">
                     <div 
                       className="bg-primary-500 h-1.5 rounded-full" 
-                      style={{ width: `${Math.min(100, (streak?.currentStreak || 0) / 7 * 100)}%` }} 
+                      style={{ width: `${Math.min(100, (streak && typeof streak === 'object' && 'currentStreak' in streak ? streak.currentStreak : 0) / 7 * 100)}%` }} 
                     />
                   </div>
                 </div>

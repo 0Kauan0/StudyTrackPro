@@ -59,10 +59,11 @@ async function bootstrap() {
   }
 
   // 6) Finalmente, escuta na porta 5000 (sem host string!)
-  const port = 5000;
-  server.listen(port, () => {
-    log(`serving on http://localhost:${port}`);
+  const port = process.env.PORT || 5000;
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
   });
+  
 }
 
 bootstrap().catch(err => {

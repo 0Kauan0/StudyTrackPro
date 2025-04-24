@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { Flame, Award, Clock } from "lucide-react";
+import { Flame, Award, Clock, Edit2, Save, X } from "lucide-react";
+import { useProfile } from "@/hooks/use-profile";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const ProfilePage: React.FC = () => {
   const { data: streak } = useQuery({
@@ -12,6 +17,11 @@ const ProfilePage: React.FC = () => {
     queryKey: ['/api/study-sessions'],
   });
 
+  const { profile, isLoading, updateProfile, isUpdating } = useProfile();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState("");
+
   // Calculate total study time in hours
   const totalStudyTime = studySessions 
     ? studySessions.reduce((total, session) => total + session.duration, 0) / 3600 
@@ -19,23 +29,109 @@ const ProfilePage: React.FC = () => {
   
   const formattedStudyTime = totalStudyTime.toFixed(1);
 
+  // Format the join date
+  const joinedSince = profile?.joinedAt 
+    ? formatDistanceToNow(new Date(profile.joinedAt), { addSuffix: true, locale: ptBR })
+    : "";
+
+  // Calculate the percentage for XP progress
+  const xpForCurrentLevel = profile ? (profile.level - 1) * 100 : 0;
+  const xpForNextLevel = profile ? profile.level * 100 : 100;
+  const xpProgress = profile ? (profile.xp - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel) * 100 : 0;
+
+  // Start editing mode
+  const handleStartEdit = () => {
+    setEditedName(profile?.name || "");
+    setIsEditing(true);
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  // Save the edited name
+  const handleSaveEdit = async () => {
+    if (editedName.trim() && profile) {
+      await updateProfile({ name: editedName });
+      setIsEditing(false);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center mt-4">Carregando perfil...</div>;
+  }
+
+  if (!profile) {
+    return <div className="text-center mt-4">Perfil não encontrado</div>;
+  }
+
+  // Generate initials from the name
+  const initials = profile.name
+    .split(" ")
+    .map(part => part.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div className="mb-8">
       <h2 className="text-2xl font-heading font-bold text-white mb-6">Perfil do Estudante</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-slate-800 border-slate-700">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-white">Informações Pessoais</CardTitle>
+            {!isEditing && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleStartEdit}
+                className="text-slate-400 hover:text-white"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4 mb-6">
               <div className="w-20 h-20 rounded-full bg-slate-700 flex items-center justify-center text-primary-400 text-xl font-medium">
-                JP
+                {initials}
               </div>
-              <div>
-                <h3 className="text-lg font-medium text-white">João Pedro</h3>
-                <p className="text-sm text-slate-400">Estudante desde julho 2023</p>
+              <div className="flex-1">
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <Input 
+                      value={editedName} 
+                      onChange={(e) => setEditedName(e.target.value)}
+                      placeholder="Seu nome"
+                      className="bg-slate-700 border-slate-600"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="default" 
+                        onClick={handleSaveEdit}
+                        disabled={isUpdating}
+                      >
+                        <Save className="h-4 w-4 mr-1" /> Salvar
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleCancelEdit}
+                        disabled={isUpdating}
+                      >
+                        <X className="h-4 w-4 mr-1" /> Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-medium text-white">{profile.name}</h3>
+                    <p className="text-sm text-slate-400">Estudante {joinedSince}</p>
+                  </>
+                )}
               </div>
             </div>
             
@@ -52,7 +148,16 @@ const ProfilePage: React.FC = () => {
                 <Award className="w-5 h-5 text-primary-400" />
                 <div>
                   <p className="text-sm font-medium text-white">Nível Atual</p>
-                  <p className="text-xs text-slate-400">Nível 3 - Estudante Dedicado</p>
+                  <p className="text-xs text-slate-400">Nível {profile.level} - {profile.levelTitle}</p>
+                  <div className="w-full bg-slate-700 rounded-full h-1.5 mt-2">
+                    <div 
+                      className="bg-primary-500 h-1.5 rounded-full" 
+                      style={{ width: `${xpProgress}%` }} 
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {profile.xp} XP • {Math.ceil(xpForNextLevel - profile.xp)} XP para o próximo nível
+                  </p>
                 </div>
               </div>
               
@@ -60,7 +165,7 @@ const ProfilePage: React.FC = () => {
                 <Clock className="w-5 h-5 text-accent-400" />
                 <div>
                   <p className="text-sm font-medium text-white">Tempo Total de Estudo</p>
-                  <p className="text-xs text-slate-400">{formattedStudyTime} horas acumuladas</p>
+                  <p className="text-xs text-slate-400">{profile.totalStudyHours.toFixed(1)} horas acumuladas</p>
                 </div>
               </div>
             </div>
@@ -99,7 +204,7 @@ const ProfilePage: React.FC = () => {
                   <div className="w-full bg-slate-700 rounded-full h-1.5 mt-2">
                     <div 
                       className="bg-secondary-500 h-1.5 rounded-full" 
-                      style={{ width: `${Math.min(100, totalStudyTime / 30 * 100)}%` }} 
+                      style={{ width: `${Math.min(100, profile.totalStudyHours / 30 * 100)}%` }} 
                     />
                   </div>
                 </div>

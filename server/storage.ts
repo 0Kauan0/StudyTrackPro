@@ -167,7 +167,7 @@ export class MemStorage implements IStorage {
       // Initialize streak if it doesn't exist
       await this.updateStreak({
         currentStreak: 1,
-        lastStudyDate: sessionDay
+        lastStudyDate: sessionDay.toISOString()
       });
       return;
     }
@@ -187,13 +187,13 @@ export class MemStorage implements IStorage {
         // If last study was yesterday or already today, increment streak
         await this.updateStreak({
           currentStreak: currentStreak.currentStreak + 1,
-          lastStudyDate: sessionDay
+          lastStudyDate: sessionDay.toISOString()
         });
       } else if (lastStudyDate.getTime() < yesterday.getTime()) {
         // If there was a gap, reset streak
         await this.updateStreak({
           currentStreak: 1,
-          lastStudyDate: sessionDay
+          lastStudyDate: sessionDay.toISOString()
         });
       }
     }

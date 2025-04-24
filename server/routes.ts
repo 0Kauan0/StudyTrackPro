@@ -83,5 +83,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user profile
+  app.get("/api/user-profile", async (req, res) => {
+    try {
+      const profile = await storage.getUserProfile();
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Perfil de usuário não encontrado" });
+      }
+      
+      // Add level title to the profile
+      const profileWithTitle = {
+        ...profile,
+        levelTitle: getLevelTitle(profile.level)
+      };
+      
+      res.json(profileWithTitle);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar perfil de usuário" });
+    }
+  });
+  
+  // Update user profile
+  app.patch("/api/user-profile", async (req, res) => {
+    try {
+      const validatedData = updateUserProfileSchema.parse(req.body);
+      const profile = await storage.updateUserProfile(validatedData);
+      
+      // Add level title to the response
+      const profileWithTitle = {
+        ...profile,
+        levelTitle: getLevelTitle(profile.level)
+      };
+      
+      res.json(profileWithTitle);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Erro ao atualizar perfil de usuário" });
+      }
+    }
+  });
+
   return httpServer;
 }

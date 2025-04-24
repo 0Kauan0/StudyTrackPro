@@ -2,6 +2,16 @@ import { pgTable, text, serial, integer, timestamp, date } from "drizzle-orm/pg-
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// User profile table - stores user information
+export const userProfiles = pgTable("user_profiles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  totalStudyHours: integer("total_study_hours").notNull().default(0),
+  level: integer("level").notNull().default(1),
+  xp: integer("xp").notNull().default(0),
+});
+
 // Subjects table - stores available study subjects
 export const subjects = pgTable("subjects", {
   id: serial("id").primaryKey(),
@@ -27,6 +37,21 @@ export const streaks = pgTable("streaks", {
 });
 
 // Define insert schemas
+export const insertUserProfileSchema = createInsertSchema(userProfiles).pick({
+  name: true,
+  joinedAt: true,
+  totalStudyHours: true,
+  level: true,
+  xp: true,
+});
+
+export const updateUserProfileSchema = createInsertSchema(userProfiles).pick({
+  name: true,
+  totalStudyHours: true,
+  level: true,
+  xp: true,
+}).partial();
+
 export const insertSubjectSchema = createInsertSchema(subjects).pick({
   name: true,
   color: true,
@@ -46,6 +71,10 @@ export const insertStreakSchema = createInsertSchema(streaks).pick({
 });
 
 // Define types
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
+
 export type Subject = typeof subjects.$inferSelect;
 export type InsertSubject = z.infer<typeof insertSubjectSchema>;
 
@@ -54,3 +83,26 @@ export type InsertStudySession = z.infer<typeof insertStudySessionSchema>;
 
 export type Streak = typeof streaks.$inferSelect;
 export type InsertStreak = z.infer<typeof insertStreakSchema>;
+
+// Function to calculate level based on XP
+export function calculateLevel(xp: number): number {
+  // Simple level calculation: every 100 XP is a new level
+  return Math.max(1, Math.floor(xp / 100) + 1);
+}
+
+// Function to calculate XP from study time (in seconds)
+export function calculateXPFromStudyTime(seconds: number): number {
+  // 1 XP per minute of study (60 seconds)
+  return Math.floor(seconds / 60);
+}
+
+// Get user level title based on level
+export function getLevelTitle(level: number): string {
+  if (level === 1) return "Iniciante";
+  if (level === 2) return "Estudante Regular";
+  if (level === 3) return "Estudante Dedicado";
+  if (level === 4) return "Estudante Avançado";
+  if (level === 5) return "Mestre dos Estudos";
+  if (level >= 6) return "Guru do Conhecimento";
+  return "Iniciante";
+}

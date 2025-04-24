@@ -1,17 +1,28 @@
 import { 
   subjects, 
   studySessions, 
-  streaks, 
+  streaks,
+  userProfiles, 
+  calculateLevel,
+  calculateXPFromStudyTime,
   type Subject, 
   type InsertSubject, 
   type StudySession, 
   type InsertStudySession, 
   type Streak, 
-  type InsertStreak 
+  type InsertStreak,
+  type UserProfile,
+  type InsertUserProfile,
+  type UpdateUserProfile
 } from "@shared/schema";
 
 // Define the storage interface
 export interface IStorage {
+  // User profile methods
+  getUserProfile(): Promise<UserProfile | undefined>;
+  createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  updateUserProfile(profile: UpdateUserProfile): Promise<UserProfile>;
+  
   // Subject methods
   getSubjects(): Promise<Subject[]>;
   getSubject(id: number): Promise<Subject | undefined>;
@@ -33,22 +44,41 @@ export class MemStorage implements IStorage {
   private subjects: Map<number, Subject>;
   private studySessions: Map<number, StudySession>;
   private streak: Streak | undefined;
+  private userProfile: UserProfile | undefined;
   
   private subjectId: number;
   private sessionId: number;
   private streakId: number;
+  private userProfileId: number;
   
   constructor() {
     this.subjects = new Map();
     this.studySessions = new Map();
     this.streak = undefined;
+    this.userProfile = undefined;
     
     this.subjectId = 1;
     this.sessionId = 1;
     this.streakId = 1;
+    this.userProfileId = 1;
     
     // Add default subjects
     this.initializeSubjects();
+    
+    // Create default user profile
+    this.initializeUserProfile();
+  }
+  
+  private initializeUserProfile() {
+    const defaultProfile: InsertUserProfile = {
+      name: "João Pedro",
+      joinedAt: new Date("2023-07-01"),
+      totalStudyHours: 0,
+      level: 3,
+      xp: 250
+    };
+    
+    this.createUserProfile(defaultProfile);
   }
   
   private initializeSubjects() {
@@ -121,6 +151,9 @@ export class MemStorage implements IStorage {
     // Update streak when creating a new session
     await this.updateStreakFromSession(newSession);
     
+    // Update user XP and level based on the session
+    await this.updateUserXPFromSession(newSession);
+    
     return newSession;
   }
   
@@ -164,6 +197,48 @@ export class MemStorage implements IStorage {
         });
       }
     }
+  }
+  
+  // User profile methods
+  async getUserProfile(): Promise<UserProfile | undefined> {
+    return this.userProfile;
+  }
+  
+  async createUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
+    const id = this.userProfileId++;
+    const newProfile: UserProfile = { id, ...profile };
+    this.userProfile = newProfile;
+    return newProfile;
+  }
+  
+  async updateUserProfile(profile: UpdateUserProfile): Promise<UserProfile> {
+    if (!this.userProfile) {
+      throw new Error("User profile does not exist");
+    }
+    
+    this.userProfile = { ...this.userProfile, ...profile };
+    return this.userProfile;
+  }
+  
+  // Update user XP and level based on study session
+  private async updateUserXPFromSession(session: StudySession): Promise<void> {
+    if (!this.userProfile) return;
+    
+    // Calculate XP from session duration
+    const sessionXP = calculateXPFromStudyTime(session.duration);
+    const newXP = this.userProfile.xp + sessionXP;
+    const newLevel = calculateLevel(newXP);
+    
+    // Convert duration from seconds to hours
+    const durationInHours = session.duration / 3600;
+    const newTotalStudyHours = this.userProfile.totalStudyHours + durationInHours;
+    
+    // Update user profile
+    await this.updateUserProfile({
+      xp: newXP,
+      level: newLevel,
+      totalStudyHours: newTotalStudyHours
+    });
   }
   
   // Streak methods

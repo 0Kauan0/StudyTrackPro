@@ -1,0 +1,82 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertSubjectSchema, insertStudySessionSchema } from "@shared/schema";
+import { ZodError } from "zod";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  const httpServer = createServer(app);
+
+  // Get all subjects
+  app.get("/api/subjects", async (req, res) => {
+    try {
+      const subjects = await storage.getSubjects();
+      res.json(subjects);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar matérias" });
+    }
+  });
+
+  // Create a new subject
+  app.post("/api/subjects", async (req, res) => {
+    try {
+      const validatedData = insertSubjectSchema.parse(req.body);
+      const subject = await storage.createSubject(validatedData);
+      res.status(201).json(subject);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Erro ao criar matéria" });
+      }
+    }
+  });
+
+  // Get study sessions
+  app.get("/api/study-sessions", async (req, res) => {
+    try {
+      if (req.query.day) {
+        const day = new Date(req.query.day as string);
+        const sessions = await storage.getStudySessionsByDay(day);
+        res.json(sessions);
+      } else if (req.query.startDate && req.query.endDate) {
+        const startDate = new Date(req.query.startDate as string);
+        const endDate = new Date(req.query.endDate as string);
+        const sessions = await storage.getStudySessionsByDateRange(startDate, endDate);
+        res.json(sessions);
+      } else {
+        const sessions = await storage.getStudySessions();
+        res.json(sessions);
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar sessões de estudo" });
+    }
+  });
+
+  // Create a new study session
+  app.post("/api/study-sessions", async (req, res) => {
+    try {
+      const validatedData = insertStudySessionSchema.parse(req.body);
+      const session = await storage.createStudySession(validatedData);
+      res.status(201).json(session);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        res.status(400).json({ message: "Dados inválidos", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Erro ao criar sessão de estudo" });
+      }
+    }
+  });
+
+  // Get current streak
+  app.get("/api/streak", async (req, res) => {
+    try {
+      const streak = await storage.getStreak() || { id: 0, currentStreak: 0, lastStudyDate: null };
+      res.json(streak);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar streak" });
+    }
+  });
+
+  return httpServer;
+}

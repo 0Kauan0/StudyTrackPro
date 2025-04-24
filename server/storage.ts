@@ -71,11 +71,11 @@ export class MemStorage implements IStorage {
   
   private initializeUserProfile() {
     const defaultProfile: InsertUserProfile = {
-      name: "João Pedro",
-      joinedAt: new Date("2023-07-01"),
+      name: "Novo Usuário",
+      joinedAt: new Date(),
       totalStudyHours: 0,
-      level: 3,
-      xp: 250
+      level: 1,
+      xp: 0
     };
     
     this.createUserProfile(defaultProfile);

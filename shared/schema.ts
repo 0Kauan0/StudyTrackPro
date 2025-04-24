@@ -57,12 +57,14 @@ export const insertSubjectSchema = createInsertSchema(subjects).pick({
   color: true,
 });
 
-export const insertStudySessionSchema = createInsertSchema(studySessions).pick({
-  subjectId: true,
-  startTime: true,
-  endTime: true,
-  duration: true,
-  day: true,
+// Criamos um schema personalizado para a inserção de sessões de estudo
+// que possa lidar com strings ou dates para os campos de data/horário
+export const insertStudySessionSchema = z.object({
+  subjectId: z.number().int().positive(),
+  startTime: z.union([z.date(), z.string().datetime()]),
+  endTime: z.union([z.date(), z.string().datetime()]),
+  duration: z.number().int().nonnegative(),
+  day: z.union([z.date(), z.string().datetime()])
 });
 
 export const insertStreakSchema = createInsertSchema(streaks).pick({

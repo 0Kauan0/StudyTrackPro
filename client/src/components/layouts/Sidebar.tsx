@@ -3,8 +3,13 @@ import { Link } from "wouter";
 import { Clock, BarChart2, CalendarDays, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/use-profile";
-// Import diretamente do arquivo shared/schema.ts
-import type { Streak } from "../../../../../../shared/schema";
+
+// Definição local do tipo Streak
+interface Streak {
+  id: number;
+  currentStreak: number;
+  lastStudyDate: string | null;
+}
 
 type SidebarProps = {
   activePath: string;

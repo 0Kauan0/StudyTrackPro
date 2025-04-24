@@ -180,6 +180,7 @@ export class MemStorage implements IStorage {
     const normalizedDay = new Date(day);
     normalizedDay.setHours(0, 0, 0, 0);
     
+    console.log("===== NOVA SESSÃO DE ESTUDO =====");
     console.log("Criando sessão para o dia:", normalizedDay);
     
     // Criar nova sessão com os valores convertidos
@@ -194,6 +195,9 @@ export class MemStorage implements IStorage {
     
     this.studySessions.set(id, newSession);
     
+    console.log("Sessão criada com ID:", id);
+    console.log("Atualizando streak...");
+    
     // Update streak when creating a new session
     await this.updateStreakFromSession(newSession);
     
@@ -205,17 +209,18 @@ export class MemStorage implements IStorage {
   
   // Helper method to update streak based on new session
   private async updateStreakFromSession(session: StudySession): Promise<void> {
+    console.log("\n===== ATUALIZANDO STREAK =====");
+    
+    // 1. Obter o streak atual e normalizar a data da sessão
     const currentStreak = await this.getStreak();
     const sessionDay = new Date(session.day);
-    sessionDay.setHours(0, 0, 0, 0);
+    sessionDay.setHours(0, 0, 0, 0);  // Normalizar para o início do dia
     
-    console.log("Atualizando streak para a sessão:", session);
-    console.log("Dia da sessão:", sessionDay);
-    console.log("Streak atual:", currentStreak);
+    console.log("Dia da nova sessão:", sessionDay.toISOString().split('T')[0]);
     
+    // Se não existe streak, inicializar com 1
     if (!currentStreak) {
-      // Initialize streak if it doesn't exist
-      console.log("Inicializando streak para 1");
+      console.log("Nenhum streak encontrado, criando novo com valor 1");
       await this.updateStreak({
         currentStreak: 1,
         lastStudyDate: sessionDay.toISOString()
@@ -223,12 +228,15 @@ export class MemStorage implements IStorage {
       return;
     }
     
-    const lastStudyDate = currentStreak.lastStudyDate ? new Date(currentStreak.lastStudyDate) : null;
-    console.log("Último dia de estudo:", lastStudyDate);
+    console.log("Streak atual:", currentStreak.currentStreak);
     
-    // Se não há último dia de estudo, definir para 1
+    // Se não há data do último estudo, inicializar com a data atual e streak 1
+    const lastStudyDate = currentStreak.lastStudyDate 
+      ? new Date(currentStreak.lastStudyDate) 
+      : null;
+    
     if (!lastStudyDate) {
-      console.log("Sem último dia de estudo, definindo streak para 1");
+      console.log("Streak existente mas sem data de último estudo, definindo streak para 1");
       await this.updateStreak({
         currentStreak: 1,
         lastStudyDate: sessionDay.toISOString()
@@ -236,58 +244,57 @@ export class MemStorage implements IStorage {
       return;
     }
     
-    // Garantir que as datas estejam padronizadas (apenas dia, sem horas)
+    // Normalizar a data do último estudo
     lastStudyDate.setHours(0, 0, 0, 0);
+    console.log("Último dia de estudo:", lastStudyDate.toISOString().split('T')[0]);
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Calcular a diferença em dias entre a última sessão e a atual
+    const dayDifference = this.getDayDifference(lastStudyDate, sessionDay);
+    console.log("Diferença em dias:", dayDifference);
     
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    console.log("Hoje:", today);
-    console.log("Ontem:", yesterday);
-    
-    // Se o último estudo foi no mesmo dia que a sessão atual, não aumentamos o streak
-    if (lastStudyDate.getTime() === sessionDay.getTime()) {
+    // Caso 1: Mesmo dia - não altera o streak
+    if (dayDifference === 0) {
       console.log("Sessão no mesmo dia, mantendo streak em:", currentStreak.currentStreak);
-      // Não fazer nada, streak permanece o mesmo
       return;
     }
     
-    // Se o último dia de estudo foi ontem E a sessão atual é de hoje
-    if (lastStudyDate.getTime() === yesterday.getTime() && 
-        sessionDay.getTime() === today.getTime()) {
-      console.log("Sessão em dia consecutivo, incrementando streak para:", currentStreak.currentStreak + 1);
-      // Incrementar streak apenas se for um dia novo consecutivo
+    // Caso 2: Dia consecutivo (diferença de 1 dia) - incrementa o streak
+    if (dayDifference === 1) {
+      // Se o último estudo foi exatamente 1 dia antes
+      const newStreakValue = currentStreak.currentStreak + 1;
+      console.log("Dia consecutivo! Incrementando streak para:", newStreakValue);
+      
       await this.updateStreak({
-        currentStreak: currentStreak.currentStreak + 1,
+        currentStreak: newStreakValue,
         lastStudyDate: sessionDay.toISOString()
       });
       return;
     }
     
-    // Se a sessão atual é de ontem e a última sessão é de anteontem, incrementa streak
-    const dayBeforeYesterday = new Date(yesterday);
-    dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 1);
-    
-    if (lastStudyDate.getTime() === dayBeforeYesterday.getTime() && 
-        sessionDay.getTime() === yesterday.getTime()) {
-      console.log("Sessão em dia consecutivo (ontem), incrementando streak para:", currentStreak.currentStreak + 1);
-      await this.updateStreak({
-        currentStreak: currentStreak.currentStreak + 1,
-        lastStudyDate: sessionDay.toISOString()
-      });
-      return;
-    }
-    
-    // Se a sessão atual é de um dia diferente de hoje ou ontem, ou se houve um intervalo maior que 1 dia
-    // Reiniciar o streak
-    console.log("Intervalo maior que 1 dia ou data de sessão não consecutiva, reiniciando streak");
+    // Caso 3: Dia não consecutivo (diferença > 1 dia) - reseta o streak para 1
+    console.log("Dia não consecutivo, reiniciando streak para 1");
     await this.updateStreak({
       currentStreak: 1,
       lastStudyDate: sessionDay.toISOString()
     });
+  }
+  
+  // Função auxiliar para calcular a diferença em dias entre duas datas
+  private getDayDifference(date1: Date, date2: Date): number {
+    // Garantir que as datas estejam normalizadas
+    const normalizedDate1 = new Date(date1);
+    normalizedDate1.setHours(0, 0, 0, 0);
+    
+    const normalizedDate2 = new Date(date2);
+    normalizedDate2.setHours(0, 0, 0, 0);
+    
+    // Calcular a diferença em milissegundos
+    const timeDiff = Math.abs(normalizedDate2.getTime() - normalizedDate1.getTime());
+    
+    // Converter para dias (86400000 = 1000 * 60 * 60 * 24)
+    const dayDiff = Math.floor(timeDiff / 86400000);
+    
+    return dayDiff;
   }
   
   // User profile methods

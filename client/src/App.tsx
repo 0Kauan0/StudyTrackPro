@@ -4,6 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryClient } from "./lib/queryClient";
 import AppLayout from "@/components/layouts/AppLayout";
+import { useState, useEffect } from "react";
+import { useProfile } from "@/hooks/use-profile";
+import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
 
 // Pages
 import TimerPage from "@/pages/timer";
@@ -26,14 +29,38 @@ function Router() {
   );
 }
 
+function AppContent() {
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const { profile, isLoading } = useProfile();
+
+  useEffect(() => {
+    // Verificar se o usuário já tem um perfil ou se deve mostrar a tela de onboarding
+    if (!isLoading && profile) {
+      const isNewUser = profile.name === "Novo Usuário";
+      setShowOnboarding(isNewUser);
+    }
+  }, [profile, isLoading]);
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-slate-50 dark">
+      <Toaster />
+      {showOnboarding ? (
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
+      ) : null}
+      <Router />
+    </div>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-slate-900 text-slate-50 dark">
-          <Toaster />
-          <Router />
-        </div>
+        <AppContent />
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -14,7 +14,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const [name, setName] = useState("");
   const { updateProfile, isUpdating } = useProfile();
   const { toast } = useToast();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       onComplete();
       
       // Redireciona para a página do cronômetro
-      navigate("/");
+      setLocation("/");
       
     } catch (error) {
       console.error("Erro ao configurar perfil:", error);
